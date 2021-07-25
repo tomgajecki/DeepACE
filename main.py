@@ -133,7 +133,7 @@ def evaluate(args, model):
 
     mse = model.evaluate(test_ds, callbacks = test_logger, verbose = 0)
     
-    print("Evaluation MSE:", mse)
+    print("Evaluation MSE:", round(mse,2))
          
 def main():
     args = setup()
