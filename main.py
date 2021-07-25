@@ -118,7 +118,6 @@ def evaluate(args, model):
         args.GPU = False
 
     model = DeepACE(args).call()
-
     
     model.compile(loss = 'MSE')
     
