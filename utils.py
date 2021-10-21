@@ -22,7 +22,6 @@ def setup():
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
     parser.add_argument('-ld', '--model_dir', type=str, default='./models')    
     parser.add_argument('-dd', '--data_dir', type=str, default='./data')
-    parser.add_argument('-md', '--metadata_dir', type=str, default='./data/test/metadata')
     parser.add_argument('-sr', '--sample_rate', type=int, default=16e3)
     parser.add_argument('-c',  '--causal', type=bool, default = True)
     parser.add_argument('-me', '--max_epoch', type=int, default=100)
@@ -36,7 +35,7 @@ def setup():
     parser.add_argument('-H', '-H', type=int, default=128)
     parser.add_argument('-S', '-S', type=int, default=32)
     parser.add_argument('-P', '-P', type=int, default=128)
-    parser.add_argument('-X', '-X', type=int, default=3)
+    parser.add_argument('-X', '-X', type=int, default=2)
     parser.add_argument('-R', '-R', type=int, default=2)
     
     parser.add_argument('-csr', '--channel_stim_rate', type = int, default = 1000)
