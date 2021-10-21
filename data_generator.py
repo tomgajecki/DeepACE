@@ -19,7 +19,7 @@ import tensorflow as tf
 
 class DataGenerator():
     def __init__(self, mode, args):
-        if mode != "train" and mode != "valid" and mode != "test":
+        if mode != "train" and mode != "valid":
             raise ValueError("mode: {} while mode should be "
                              "'train'".format(mode))
         
@@ -57,10 +57,6 @@ class DataGenerator():
             valid_dataset = valid_dataset.prefetch(tf.data.experimental.AUTOTUNE) 
             return valid_dataset
 
-        else:
-            dataset = dataset.batch(1, drop_remainder=True)
-            dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
-            return dataset
 
     def _encode(self, mode):
         
@@ -69,82 +65,52 @@ class DataGenerator():
         
         if self.mode == "valid":
             print("\nSerializing validation data...\n")
-        
-        if self.mode == "test":
-            print("\nSerializing testing data...\n")
 
         writer = tf.io.TFRecordWriter(self.tfr)
-        if self.mode != "test":
-            mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_mixed_CH1.wav"))
-            
-            target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_CH1_LGF.mat"))
 
-            sys.stdout.flush()  
-            for mix_filename, target_filename in tqdm(zip(mix_filenames, 
-                                                          target_filenames), total = len(mix_filenames)):
-                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
-                clean = sio.loadmat(target_filename)['lgf_clean']
-                clean = clean.astype(mix.dtype)
-    
-                def writeTF(a, b, c, d):
-                    example = tf.train.Example(
-                        features=tf.train.Features(
-                            feature={
-                                    "noisy" : self._float_list_feature(mix[a:b]),
-                                    "clean" : self._float_list_feature(clean[c:d,:,-1].flatten())}))
-                    writer.write(example.SerializeToString())
+        mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_mixed_CH1.wav"))
+        
+        target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_CH1_LGF.mat"))
+
+        sys.stdout.flush()  
+        for mix_filename, target_filename in tqdm(zip(mix_filenames, 
+                                                      target_filenames), total = len(mix_filenames)):
+            mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
+            clean = sio.loadmat(target_filename)['lgf_clean']
+            clean = clean.astype(mix.dtype)
+
+            def writeTF(a, b, c, d):
+                example = tf.train.Example(
+                    features=tf.train.Features(
+                        feature={
+                                "noisy" : self._float_list_feature(mix[a:b]),
+                                "clean" : self._float_list_feature(clean[c:d,:,-1].flatten())}))
+                writer.write(example.SerializeToString())
+                           
+            input_length = mix.shape[-1]
+            
+            input_target_length = int(self.duration * self.sample_rate)
+            target_target_length = int(self.n_frames)
+            
+            slices = (input_length)//input_target_length
                                
-                input_length = mix.shape[-1]
-                
-                input_target_length = int(self.duration * self.sample_rate)
-                target_target_length = int(self.n_frames)
-                
-                slices = (input_length)//input_target_length
-                                   
-                for i in range(slices):
-                    writeTF(i*input_target_length, i*input_target_length + input_target_length, 
-                            i*target_target_length, i*target_target_length + target_target_length)
+            for i in range(slices):
+                writeTF(i*input_target_length, i*input_target_length + input_target_length, 
+                        i*target_target_length, i*target_target_length + target_target_length)
 
-        else:
-            mix_filenames = glob.glob(os.path.join(self.wav_dir, "*.wav"))
-            sys.stdout.flush()  
-            
-            for mix_filename in tqdm(mix_filenames, total = len(mix_filenames)):
-                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
-    
-                def writeTF(a, b):
-                    example = tf.train.Example(
-                        features=tf.train.Features(
-                            feature={
-                                "noisy_left" : self._float_list_feature(mix[0, a:b]),
-                                "noisy_right": self._float_list_feature(mix[1, a:b])}))
-                    
-                    writer.write(example.SerializeToString())
-                writeTF(None, None)
         writer.close()
               
     def _decode(self, serialized_example):
-        if self.mode != "test":
-            example = tf.io.parse_single_example(
-                serialized_example,
-                features={
-                    "noisy": tf.io.VarLenFeature(tf.float32),
-                    "clean": tf.io.VarLenFeature(tf.float32)})
-            
-            noisy =  tf.sparse.to_dense(example["noisy"])
-              
-            clean =  tf.sparse.to_dense(example["clean"])
-                  
-            clean = tf.reshape(clean, (self.n_frames, self.M))
-
-            return noisy, clean
+        example = tf.io.parse_single_example(
+            serialized_example,
+            features={
+                "noisy": tf.io.VarLenFeature(tf.float32),
+                "clean": tf.io.VarLenFeature(tf.float32)})
         
-        else:
-            example = tf.io.parse_single_example(
-                serialized_example,
-                features={
-                    "noisy": tf.io.VarLenFeature(tf.float32)})
-            
-            noisy =  tf.sparse.to_dense(example["noisy"])
-            
-            return noisy
+        noisy =  tf.sparse.to_dense(example["noisy"])
+          
+        clean =  tf.sparse.to_dense(example["clean"])
+              
+        clean = tf.reshape(clean, (self.n_frames, self.M))
+
+        return noisy, clean
