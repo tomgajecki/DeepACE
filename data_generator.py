@@ -75,14 +75,14 @@ class DataGenerator():
 
         writer = tf.io.TFRecordWriter(self.tfr)
         if self.mode != "test":
-            mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_mixed_CH1.wav")) +  glob.glob(os.path.join(self.wav_dir, "*mix.wav"))
+            mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_mixed_CH1.wav"))
             
-            target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_CH1_LGF.mat")) + glob.glob(os.path.join(self.wav_dir, "*clean.mat"))
+            target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_CH1_LGF.mat"))
 
             sys.stdout.flush()  
             for mix_filename, target_filename in tqdm(zip(mix_filenames, 
                                                           target_filenames), total = len(mix_filenames)):
-                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = False)
+                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
                 clean = sio.loadmat(target_filename)['lgf_clean']
                 clean = clean.astype(mix.dtype)
     
@@ -90,10 +90,8 @@ class DataGenerator():
                     example = tf.train.Example(
                         features=tf.train.Features(
                             feature={
-                                    "noisy_left" : self._float_list_feature(mix[0, a:b]),
-                                    "noisy_right": self._float_list_feature(mix[1, a:b]),
-                                    "clean_left" : self._float_list_feature(clean[c:d,:,0].flatten()),
-                                    "clean_right" : self._float_list_feature(clean[c:d,:,1].flatten())}))
+                                    "noisy" : self._float_list_feature(mix[a:b]),
+                                    "clean" : self._float_list_feature(clean[c:d,:,-1].flatten())}))
                     writer.write(example.SerializeToString())
                                
                 input_length = mix.shape[-1]
@@ -112,7 +110,7 @@ class DataGenerator():
             sys.stdout.flush()  
             
             for mix_filename in tqdm(mix_filenames, total = len(mix_filenames)):
-                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = False)
+                mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
     
                 def writeTF(a, b):
                     example = tf.train.Example(
@@ -130,33 +128,23 @@ class DataGenerator():
             example = tf.io.parse_single_example(
                 serialized_example,
                 features={
-                    "noisy_left": tf.io.VarLenFeature(tf.float32),
-                    "noisy_right": tf.io.VarLenFeature(tf.float32),
-                    "clean_left": tf.io.VarLenFeature(tf.float32),
-                    "clean_right": tf.io.VarLenFeature(tf.float32)})
+                    "noisy": tf.io.VarLenFeature(tf.float32),
+                    "clean": tf.io.VarLenFeature(tf.float32)})
             
-            noisy_left =  tf.sparse.to_dense(example["noisy_left"])
-     
-            noisy_right = tf.sparse.to_dense(example["noisy_right"])
+            noisy =  tf.sparse.to_dense(example["noisy"])
               
-            clean_left =  tf.sparse.to_dense(example["clean_left"])
-            
-            clean_left = tf.reshape(clean_left, (self.n_frames, self.M))
-            
-            clean_right = tf.sparse.to_dense(example["clean_right"])
-            
-            clean_right = tf.reshape(clean_right, (self.n_frames, self.M))
-            
-            return (noisy_left, noisy_right), (clean_left, clean_right)
+            clean =  tf.sparse.to_dense(example["clean"])
+                  
+            clean = tf.reshape(clean, (self.n_frames, self.M))
+
+            return noisy, clean
+        
         else:
             example = tf.io.parse_single_example(
                 serialized_example,
                 features={
-                    "noisy_left": tf.io.VarLenFeature(tf.float32),
-                    "noisy_right": tf.io.VarLenFeature(tf.float32)})
+                    "noisy": tf.io.VarLenFeature(tf.float32)})
             
-            noisy_left =  tf.sparse.to_dense(example["noisy_left"])
-     
-            noisy_right = tf.sparse.to_dense(example["noisy_right"])
+            noisy =  tf.sparse.to_dense(example["noisy"])
             
-            return noisy_left, noisy_right
+            return noisy
