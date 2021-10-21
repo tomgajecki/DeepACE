@@ -118,7 +118,7 @@ class Encoder(tf.keras.layers.Layer):
         return encoded_input
 
 class TCN(tf.keras.layers.Layer):
-    def __init__(self, N, L, B, H, S, P, X, R, causal, skip, duration, sample_rate, GPU, **kwargs):
+    def __init__(self, N, L, B, H, S, P, X, R, causal, skip, duration, sample_rate, block_shift, GPU, **kwargs):
         super(TCN, self).__init__(**kwargs)
         self.N = N
         self.L = L
@@ -132,7 +132,10 @@ class TCN(tf.keras.layers.Layer):
         self.skip = skip
         self.causal = causal
         self.duration = duration
+        self.block_shift = block_shift
         self.sample_rate = sample_rate
+        
+        self.encoded_len = int(tf.math.ceil(self.duration*self.sample_rate/self.block_shift))
                  
         if self.causal:
             self.padding = "causal"
@@ -142,7 +145,6 @@ class TCN(tf.keras.layers.Layer):
     def build(self, inputs):
         
         if self.causal:
-            self.encoded_len = 4000
             inp_norm  = _ChannelNorm(self.encoded_len, self.N, name = "Input_Channel_Norm")
             frst_norm = _ChannelNorm(self.encoded_len, self.H, name = "First_Channel_Norm")
             scnd_norm = _ChannelNorm(self.encoded_len, self.H, name = "Second_Channel_Norm")
@@ -175,10 +177,10 @@ class TCN(tf.keras.layers.Layer):
                     shared_axes=[1], name = "second_PReLU")
                 
                 layers[this_block + "second_norm"] = scnd_norm
-                
+
                 layers[this_block + "res_1x1_conv"] = tf.keras.layers.Conv1D(
                     filters=self.B, kernel_size=1, name = "res_1x1_conv") 
-                
+            
                 layers[this_block + "skip_1x1_conv"] = tf.keras.layers.Conv1D(
                     filters=self.S, kernel_size=1, name = "skip_1x1_conv")
        
@@ -233,12 +235,12 @@ class TCN(tf.keras.layers.Layer):
                 block_output = self.lrs[now_block + "second_PReLU"](block_output)
 
                 block_output = self.lrs[now_block + "second_norm"](block_output)
+
+                residual = self.lrs[now_block + "res_1x1_conv"](block_output)
                 
-                block_output = self.lrs[now_block + "res_1x1_conv"](block_output)
-                                
                 skip = self.lrs[now_block + "skip_1x1_conv"](block_output)
                 
-                block_input = block_output + block_input
+                block_input = residual + block_input
                 
                 skip_connections = skip_connections + skip
         
@@ -273,11 +275,12 @@ class Masker(tf.keras.layers.Layer):
         return mask * encoded_input
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
+    def __init__(self, n_electrodes, **kwargs):
         super(Decoder, self).__init__(**kwargs)
-
+        self.n_electrodes = n_electrodes
+        
     def build(self, inputs):  
-        self.deconv = tf.keras.layers.Conv1DTranspose(22, 1, activation = "relu",
+        self.deconv = tf.keras.layers.Conv1DTranspose(self.n_electrodes, 1, activation = "relu",
                                                       name = "1d_deconv")
         
     def get_config(self):
@@ -290,7 +293,7 @@ class Decoder(tf.keras.layers.Layer):
         output = self.deconv(inputs)     
         return output
          
-class BinDeepACE():
+class DeepACE():
     def __init__(self, args):   
         self.N = args.N
         self.L = args.L
@@ -306,108 +309,37 @@ class BinDeepACE():
         self.causal = args.causal
         self.duration = args.duration
         self.sample_rate = args.sample_rate
+        self.n_electrodes = args.n_electrodes
         
-        self.AL = args.attention_level
+        self.block_shift = int(tf.math.ceil(self.sample_rate/args.channel_stim_rate))
         
-        if self.AL == 2:
-            att_level = "_Double_Attention"
-        if self.AL == 1:
-            att_level = "_Single_Attention"
-        if self.AL == 0:
-            att_level = "_Independent"
+        self.model_name = self.top
+
+        self.encoder = Encoder(self.N, self.L, name = "Encoder")
         
-        self.model_name = self.top + att_level
-
-        self.encoder_left = Encoder(self.N, self.L, name = "Encoder_left")
-
-        self.encoder_right = Encoder(self.N, self.L, name = "Encoder_right")
-
-        self.encoder_left_aux = Encoder(self.N, self.L, name = "Encoder_left_aux")
-
-        self.encoder_right_aux = Encoder(self.N, self.L, name = "Encoder_right_aux")
-        
-        self.TCN_left = TCN(self.N, self.L, self.B, self.H, self.S, self.P, 
+        self.TCN = TCN(self.N, self.L, self.B, self.H, self.S, self.P, 
                                                            self.X, self.R,  
                                                            self.causal, self.skip, self.duration, 
-                                                           self.sample_rate, self.GPU, name = "TCN_left")
+                                                           self.sample_rate, self.block_shift,
+                                                           self.GPU, name = "TCN")
 
-        self.TCN_right = TCN(self.N, self.L, self.B, self.H, self.S, self.P, 
-                                                           self.X, self.R,  
-                                                           self.causal, self.skip,  self.duration, 
-                                                           self.sample_rate, self.GPU, name = "TCN_right")
-        
-        self.attention1 = tf.keras.layers.Multiply(name = "Attention_layer_1")
-        
-        self.attention2 = tf.keras.layers.Multiply(name = "Attention_layer_2")
-        
-        self.masker_left = Masker(self.N, name = "Masker_left")
-        
-        self.masker_right = Masker(self.N, name = "Masker_right")
-        
-        self.decoder_left = Decoder(name = "Decoder_left")
-        
-        self.decoder_right = Decoder(name = "Decoder_right")
+        self.masker = Masker(self.N, name = "Masker")
 
+        self.decoder = Decoder(self.n_electrodes, name = "Decoder")
+        
     def call(self):
         
-            input_left  = tf.keras.Input(shape = (None,), name = "Input_left")
+            inp  = tf.keras.Input(shape = (None,), name = "Input")
             
-            input_right = tf.keras.Input(shape = (None,), name = "Input_right")
-            
-            enc_inp_l = self.encoder_left(input_left)
-                  
-            enc_inp_r = self.encoder_right(input_right)
-            
-            if self.AL == 2:
-            
-                kernel1 =  self.attention2([enc_inp_l, enc_inp_r])
+            enc_inp = self.encoder(inp)
+              
+            skp = self.TCN(enc_inp)
+              
+            masked = self.masker(skp, enc_inp)
+
+            out = self.decoder(masked)
                 
-                skp_l = self.TCN_left(kernel1)
-                
-                skp_r = self.TCN_right(kernel1) 
-                
-                kernel2 =  self.attention1([skp_l, skp_r])
-    
-                masked_left = self.masker_left(kernel2, enc_inp_l)
-    
-                masked_right = self.masker_right(kernel2, enc_inp_r)  
-    
-                out_left = self.decoder_left(masked_left)
-    
-                out_right = self.decoder_right(masked_right)
-            
-            elif self.AL == 1:
-                        
-                skp_l = self.TCN_left(enc_inp_l)
-                
-                skp_r = self.TCN_right(enc_inp_r) 
-                
-                kernel2 =  self.attention1([skp_l, skp_r])
-    
-                masked_left = self.masker_left(kernel2, enc_inp_l)
-    
-                masked_right = self.masker_right(kernel2, enc_inp_r)  
-    
-                out_left = self.decoder_left(masked_left)
-    
-                out_right = self.decoder_right(masked_right)
-                
-            else:
-                
-                skp_l = self.TCN_left(enc_inp_l)
-                
-                skp_r = self.TCN_right(enc_inp_r) 
-                  
-                masked_left = self.masker_left(skp_l, enc_inp_l)
-    
-                masked_right = self.masker_right(skp_r, enc_inp_r)  
-    
-                out_left = self.decoder_left(masked_left)
-    
-                out_right = self.decoder_right(masked_right)
-                
-            model = tf.keras.Model(inputs = [input_left, input_right], 
-                                   outputs = [out_left , out_right], name = self.model_name)
+            model = tf.keras.Model(inputs = inp, outputs = out, name = self.model_name)
             
             for i, w in enumerate(model.weights):
                 split_name = w.name.split('/')
