@@ -13,9 +13,7 @@ import argparse
 def setup():
     parser = argparse.ArgumentParser(description = 'Main configuration')
     
-    parser.add_argument('-top', '--topology', type=str, default = "BinDeepACE")
-    
-    parser.add_argument('-AL', '--attention_level', type=int, default = 0)
+    parser.add_argument('-top', '--topology', type=str, default = "DeepACE")
     
     parser.add_argument('-mo', '--mode', type=str, default = 'train')  
     
@@ -25,7 +23,7 @@ def setup():
     parser.add_argument('-ld', '--model_dir', type=str, default='./models')    
     parser.add_argument('-dd', '--data_dir', type=str, default='./data')
     parser.add_argument('-md', '--metadata_dir', type=str, default='./data/test/metadata')
-    parser.add_argument('-sr', '--sample_rate', type=int, default=16000)
+    parser.add_argument('-sr', '--sample_rate', type=int, default=16e3)
     parser.add_argument('-c',  '--causal', type=bool, default = True)
     parser.add_argument('-me', '--max_epoch', type=int, default=100)
     parser.add_argument('-bs', '--batch_size', type=int, default=2)
