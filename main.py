@@ -135,21 +135,18 @@ def evaluate(args, model):
     mse_valid = model.evaluate(valid_ds, callbacks = test_logger, verbose = 0)
     
     print("Evaluation MSE:", round(mse_valid,4))
-    
+
 def main():
 
     args = setup()
 
     if args.mode == "train":
         train(args)  
-        trained_models = os.listdir(args.model_dir)
-        for tm in  trained_models:
-            test(args, tm)
-            
-    else args.mode == "evaluate":
+        
+    else:
         trained_models = os.listdir(args.model_dir)
         for tm in  trained_models:
             evaluate(args, tm)
-         
+            
 if __name__ == '__main__':
-    main()      
+    main()  
