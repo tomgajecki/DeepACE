@@ -4,3 +4,7 @@ Cochlear implant (CI) users struggle to understand speech in noisyconditions.   
 
 ![Deep ACE block diagram](fig.png)
 </p>
+
+<p align="center">
+  <img src="fig.png" />
+</p>
