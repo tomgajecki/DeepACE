@@ -280,7 +280,7 @@ class Decoder(tf.keras.layers.Layer):
         self.n_electrodes = n_electrodes
         
     def build(self, inputs):  
-        self.deconv = tf.keras.layers.Conv1DTranspose(self.n_electrodes, 1, activation = "relu",
+        self.deconv = tf.keras.layers.Conv1DTranspose(self.n_electrodes, 1, activation = tf.keras.layers.ReLU(max_value=1.0),
                                                       name = "1d_deconv")
         
     def get_config(self):
