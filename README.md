@@ -7,7 +7,7 @@ Cochlear implant (CI) users struggle to understand speech in noisyconditions.   
 </p>
 
 # Requirements
-See [Requirements.txt](https://github.com/APGDHZ/DeepACE/requirements.txt)
+See [Requirements.txt](requirements.txt)
 
 # References
 <p align="justify">
