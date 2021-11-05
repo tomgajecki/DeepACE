@@ -9,10 +9,10 @@ All rights reserved.
 """
 
 import os
-import numpy as np
 import sys
 import glob
 import librosa
+import numpy as np
 from tqdm import tqdm
 import scipy.io as sio
 import tensorflow as tf
