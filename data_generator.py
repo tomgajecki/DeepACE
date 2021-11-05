@@ -57,7 +57,6 @@ class DataGenerator():
             valid_dataset = valid_dataset.prefetch(tf.data.experimental.AUTOTUNE) 
             return valid_dataset
 
-
     def _encode(self, mode):
         
         if self.mode == "train":
