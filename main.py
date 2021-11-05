@@ -145,7 +145,7 @@ def main():
         
     else:
         trained_models = os.listdir(args.model_dir)
-        for tm in  trained_models:
+        for tm in trained_models:
             evaluate(args, tm)
             
 if __name__ == '__main__':
