@@ -134,7 +134,7 @@ def evaluate(args, model):
 
     mse_valid = model.evaluate(valid_ds, callbacks = test_logger, verbose = 0)
     
-    print("Evaluation MSE:", round(mse_valid,4))
+    print("Evaluation MSE:", round(mse_valid, 4))
 
 def main():
 
