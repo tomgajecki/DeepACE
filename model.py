@@ -329,24 +329,24 @@ class DeepACE():
         
     def call(self):
         
-            inp  = tf.keras.Input(shape = (None,), name = "Input")
-            
-            enc_inp = self.encoder(inp)
-              
-            skp = self.TCN(enc_inp)
-              
-            masked = self.masker(skp, enc_inp)
+        inp  = tf.keras.Input(shape = (None,), name = "Input")
 
-            out = self.decoder(masked)
-                
-            model = tf.keras.Model(inputs = inp, outputs = out, name = self.model_name)
-            
-            for i, w in enumerate(model.weights):
-                split_name = w.name.split('/')
-                if len(split_name) > 1:
-                    new_name = split_name[0] + '_' + str(i) + '/' + split_name[1] + '_' + str(i) + '/' + split_name[-1] 
-                    model.weights[i]._handle_name = new_name
-                else:
-                    new_name = "new" + '_' + str(i) + '/' + "layer_name" + '_' + str(i) + '/' + split_name[-1] 
-            
-            return model
+        enc_inp = self.encoder(inp)
+
+        skp = self.TCN(enc_inp)
+
+        masked = self.masker(skp, enc_inp)
+
+        out = self.decoder(masked)
+
+        model = tf.keras.Model(inputs = inp, outputs = out, name = self.model_name)
+
+        for i, w in enumerate(model.weights):
+            split_name = w.name.split('/')
+            if len(split_name) > 1:
+                new_name = split_name[0] + '_' + str(i) + '/' + split_name[1] + '_' + str(i) + '/' + split_name[-1] 
+                model.weights[i]._handle_name = new_name
+            else:
+                new_name = "new" + '_' + str(i) + '/' + "layer_name" + '_' + str(i) + '/' + split_name[-1] 
+
+        return model
