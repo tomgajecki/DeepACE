@@ -83,12 +83,11 @@ class Rectifier(tf.keras.layers.Layer):
         return config
     
     def call(self, inputs):
-        inputs -= tf.reduce_mean(inputs, axis=-1, keepdims=True)
-        pos = tf.keras.activations.relu(inputs)
-        neg = tf.keras.activations.relu(-inputs)
-        concatenated = tf.concat([pos, neg], axis=-1)
-        mixed = tf.matmul(concatenated, self.kernel)
-        return mixed
+        inputs = tf.reduce_mean(inputs, axis=-1, keepdims=True)
+        pos = tf.nn.relu(inputs)
+        neg = tf.nn.relu(-inputs)
+        mixed = tf.concat([pos, neg], axis=-1)
+        mixed = tf.matmul(mixed, tf.math.abs(self.kernel))
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, N, L, **kwargs):
