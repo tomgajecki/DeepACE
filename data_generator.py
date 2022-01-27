@@ -67,15 +67,15 @@ class DataGenerator():
 
         writer = tf.io.TFRecordWriter(self.tfr)
 
-        mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_mixed_CH1.wav"))
+        mix_filenames = glob.glob(os.path.join(self.wav_dir, "*_input_extension.wav"))
         
-        target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_CH1_LGF.mat"))
+        target_filenames = glob.glob(os.path.join(self.wav_dir, "*_target_extension.mat"))
 
         sys.stdout.flush()  
         for mix_filename, target_filename in tqdm(zip(mix_filenames, 
                                                       target_filenames), total = len(mix_filenames)):
             mix, _ = librosa.load(mix_filename, self.sample_rate, mono = True)
-            clean = sio.loadmat(target_filename)['lgf_clean']
+            clean = sio.loadmat(target_filename)['keyword']
             clean = clean.astype(mix.dtype)
 
             def writeTF(a, b, c, d):
@@ -83,7 +83,7 @@ class DataGenerator():
                     features=tf.train.Features(
                         feature={
                                 "noisy" : self._float_list_feature(mix[a:b]),
-                                "clean" : self._float_list_feature(clean[c:d,:,-1].flatten())}))
+                                "clean" : self._float_list_feature(clean[c:d,:].flatten())}))
                 writer.write(example.SerializeToString())
                            
             input_length = mix.shape[-1]
