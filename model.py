@@ -23,6 +23,7 @@ class  _ChannelNorm(tf.keras.layers.Layer):
         self.beta = tf.Variable(initial_value=w_init(shape = (1, 1, 
                                                               self.channel_size), dtype=self.dt), 
                                                                 trainable=True, name = "CN_beta") 
+    
     def get_config(self):
         config = super(_ChannelNorm, self).get_config().copy()
         config.update({
