@@ -143,7 +143,6 @@ class TCN(tf.keras.layers.Layer):
             self.padding = "same"
         
     def build(self, inputs):
-        
         if self.causal:
             inp_norm  = _ChannelNorm(self.encoded_len, self.N, name = "Input_Channel_Norm")
             frst_norm = _ChannelNorm(self.encoded_len, self.H, name = "First_Channel_Norm")
@@ -207,7 +206,6 @@ class TCN(tf.keras.layers.Layer):
         return config 
 
     def call(self, encoded_input, **kwargs):
-        
         self.encoded_len = encoded_input.shape[1]
         
         norm_input = self.lrs["input_norm"](encoded_input)
@@ -328,7 +326,6 @@ class DeepACE():
         self.decoder = Decoder(self.n_electrodes, name = "Decoder")
         
     def call(self):
-        
         inp  = tf.keras.Input(shape = (None,), name = "Input")
 
         enc_inp = self.encoder(inp)
