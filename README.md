@@ -3,7 +3,7 @@
 Cochlear implant (CI) users struggle to understand speech in noisy conditions. To address this problem, we propose a deep learning speech denoising sound coding strategy that estimates the CI electric stimulation patterns out of the raw audio data captured by the microphone, performing end-to-end CI processing. To estimate the relative denoising performance differences between various approaches, we compared this technique to a classic Wiener filter and to a conv-TasNet. Speech enhancement performance was assessed by means of signal-to-noise-ratio improvement and the short-time objective speech intelligibility measure. Additionally, 5 CI users were evaluated for speech intelligibility in noise to assess the potential benefits of each algorithm. Our results show that the proposed method is capable of replacing a CI sound coding strategy while preserving its general use for every listener and performing speech enhancement in noisy environments, without sacrificing algorithmic latency.
 
 <p align="center">
-  <img src="fig.png"  alt="60%" width="60%"/>
+  <img src="fig.png"  alt="60%" width="60%" style="border-radius:20%"/>
 </p>
 
 # Requirements
