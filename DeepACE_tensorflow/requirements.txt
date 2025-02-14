@@ -1,0 +1,7 @@
+matplotlib==3.3.4
+tqdm==4.59.0
+librosa==0.8.1
+tensorflow_gpu==2.5.0
+scipy==1.6.2
+tensorflow_probability==0.12.2
+tensorflow==2.5.0

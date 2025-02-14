@@ -1,0 +1,43 @@
+# Directory paths for training, validation, and testing datasets.
+# Update these paths to point to your local dataset locations or organize your
+# repository so that the data is placed in the specified relative directories.
+
+train_mixture_dir: "./data/train/mixture/"       # Training mixtures directory
+train_target_dir:  "./data/train/targetLGF/"       # Training target signals directory
+valid_mixture_dir: "./data/valid/mixture/"         # Validation mixtures directory
+valid_target_dir:  "./data/valid/targetLGF/"         # Validation target signals directory
+test_dir:          "./data/test/"                  # Test data directory
+
+# ===================================================
+# Training Parameters
+# ===================================================
+batch_size: 4              # Number of samples per batch during training
+sample_rate: 16000         # Audio sampling rate in Hz
+segment_length: 4.0        # Duration (in seconds) of each audio segment used in training
+learning_rate: 1e-3        # Learning rate for the optimizer
+num_epochs: 150            # Total number of training epochs
+num_workers: 4             # Number of subprocesses for data loading
+stim_rate: 1000            # Cochlear implant stimulation rate (Hz)
+base_level: 0.015625       # Base level threshold for cochlear implant processing
+
+# ===================================================
+# Loss Function Configuration
+# ===================================================
+loss: 'MSE'              # Loss function used during training.
+
+# ===================================================
+# DeepACE Model Configuration
+# ===================================================
+DeepACE:
+  num_sources: 1         # Number of audio sources to separate
+  N: 64                  # Number of encoder filters (defines feature dimension)
+  L: 32                  # Length of the convolutional encoder filters
+  P: 128                 # Number of channels in the bottleneck layer
+  B: 64                  # Number of channels in the intermediate layers of the separation network
+  S: 32                  # Number of channels in the skip connections
+  H: 128                 # Number of hidden units in the separation network
+  X: 2                   # Number of convolutional blocks within each stack
+  R: 2                   # Number of stacks of convolutional blocks
+  M: 22                  # Number of output channels in the mask estimation layer
+  msk_activate: "sigmoid"  # Activation function for the mask output (e.g., sigmoid for values between 0 and 1)
+  causal: True           # If True, the model only uses past information (causal processing)
