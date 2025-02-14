@@ -18,6 +18,11 @@ DeepACE is designed for tasks such as audio mixture separation, enhancement, and
 - **Customizable Configurations:** Easily modify model parameters and training settings via YAML configuration files.
 - **State-of-the-Art Techniques:** Implements advanced techniques such as Squeeze-and-Excitation, cumulative layer normalization, and low-rank augmentations.
 
+# References
+<p align="justify">
+[1] Gajecki T, Zhang Y, Nogueira W. A Deep Denoising Sound Coding Strategy for Cochlear Implants. IEEE Trans Biomed Eng. 2023 Sep;70(9):2700-2709. doi: 10.1109/TBME.2023.3262677. Epub 2023 Aug 30. PMID: 37030808.
+
+
 ---
 
 ## Installation
