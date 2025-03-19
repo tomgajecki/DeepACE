@@ -100,9 +100,6 @@ class DeepACE(torch.nn.Module):
             causal=causal
         )
 
-        # Apply Instance Normalization to the masked features.
-        self.instance_norm = torch.nn.InstanceNorm1d(self.enc_num_feats, affine=False)
-
         # ---------------------------------------------------------------------
         # Decoder: Transposed convolution to reconstruct the output from features.
         # ---------------------------------------------------------------------
@@ -141,11 +138,8 @@ class DeepACE(torch.nn.Module):
         mask = self.mask_generator(feats)
         masked = feats * mask
 
-        # Normalize the masked features.
-        normalized = self.instance_norm(masked)
-
         # Decode the normalized features to produce the output signal.
-        output = self.out_activation(self.decoder(normalized))
+        output = self.out_activation(self.decoder(masked))
 
         # ---------------------------------------------------------------------
         # Remove extra frames introduced by padding.
