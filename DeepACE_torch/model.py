@@ -27,7 +27,7 @@ Author: Tom Gajecki
 """
 
 import torch
-from netblocks import *  # Import custom network building blocks (e.g., Rectifier, MaskGenerator)
+from netblocks import *  
 
 
 class DeepACE(torch.nn.Module):
@@ -110,6 +110,8 @@ class DeepACE(torch.nn.Module):
             bias=False,
         )
 
+        self.balance = ChannelRebalancer(self.out_channels)
+
         # Final activation to constrain the output values.
         self.out_activation = torch.nn.Hardtanh(min_val=1e-6, max_val=1.0)
 
@@ -138,8 +140,13 @@ class DeepACE(torch.nn.Module):
         mask = self.mask_generator(feats)
         masked = feats * mask
 
+        decoded = self.decoder(masked)
+
         # Decode the normalized features to produce the output signal.
-        output = self.out_activation(self.decoder(masked))
+        output = self.balance(decoded)  
+
+        # Then apply the final activation:
+        output = self.out_activation(output)
 
         # ---------------------------------------------------------------------
         # Remove extra frames introduced by padding.
