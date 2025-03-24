@@ -126,6 +126,16 @@ class SELayer(torch.nn.Module):
         # Scale the input tensor.
         return x * y
 
+class ChannelRebalancer(torch.nn.Module):
+    def __init__(self, num_channels: int):
+        super().__init__()
+        # A simple 1x1 convolution to mix information across channels.
+        self.channel_mixer = torch.nn.Conv1d(num_channels, num_channels, kernel_size=1)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.channel_mixer(x)
+        return x
+
 
 class cLN(torch.nn.Module):
     """
